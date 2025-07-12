@@ -10,7 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +26,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-5#$posix)7$nqp51pvn)2==+$%_p0uzp187_nas3@4v8$xk&h%"
+SECRET_KEY = os.getenv(
+    "SECRET_KEY", "django-insecure-5#$posix)7$nqp51pvn)2==+$%_p0uzp187_nas3@4v8$xk&h%"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
+    ","
+)
 
 
 # Application definition
@@ -39,9 +49,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "drf_spectacular",
-
     # Local
-    "jobs"
+    "jobs",
 ]
 
 MIDDLEWARE = [
@@ -73,6 +82,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "app.wsgi.application"
 CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 
 
 # Database
@@ -137,12 +147,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # DRF Spectacular settings
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Guideline API',
-    'DESCRIPTION': 'A minimal backend API for processing clinical guidelines with GPT',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "Guideline API",
+    "DESCRIPTION": "A minimal backend API for processing clinical guidelines with GPT",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }

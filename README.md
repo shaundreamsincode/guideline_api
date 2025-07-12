@@ -19,6 +19,19 @@ The API will be available at `http://localhost:8000`
 
 ## Architecture & Design Choices
 
+```mermaid
+flowchart TD
+    A["POST /jobs"] -->|"Create Job, return event_id"| B["Job (DB): status=queued"]
+    B -->|"Celery picks up job"| C["Celery Worker"]
+    C -->|"Step 1: Summarize (GPT-4)"| D["Summary"]
+    D -->|"Step 2: Checklist (GPT-4)"| E["Checklist"]
+    E -->|"Save summary & checklist"| F["Job (DB): status=done"]
+    F --> G["GET /jobs/{event_id}"]
+    G -->|"Return status/result"| H["Client"]
+    C -.->|"If error"| I["Job (DB): status=failed"]
+    I --> G
+```
+
 ### **Asynchronous Processing**
 - **Celery + Redis**: Chose for reliable job queuing and processing
 - **Two-step GPT chain**: Summarize → Generate checklist for better results
@@ -83,6 +96,36 @@ pip install -r requirements-test.txt
 # Run with coverage
 ./run_tests.sh --coverage
 ```
+
+## Troubleshooting
+
+### Common Issues
+
+- **OpenAI API key not set**
+  - Ensure you have set `OPENAI_API_KEY` in your `.env` file. The worker will fail if this is missing.
+- **Database connection errors**
+  - Make sure Postgres is running and the credentials in `.env` match your Docker Compose setup.
+- **Redis connection errors**
+  - Ensure Redis is running and the `REDIS_URL`/`CELERY_BROKER_URL` are correct.
+- **Job stuck in queued**
+  - Check that the Celery worker is running and connected to Redis.
+- **API returns 400 with validation errors**
+  - The API now returns DRF-style errors, e.g. `{ "guideline_text": ["This field is required."] }`.
+
+## Environment Variables
+
+The following environment variables are required (see `.env.example`):
+
+- `SECRET_KEY` - Django secret key
+- `DEBUG` - Set to `True` for development
+- `DJANGO_ALLOWED_HOSTS` - Comma-separated list of allowed hosts
+- `DATABASE_URL` - Postgres connection string
+- `REDIS_URL` - Redis connection string
+- `OPENAI_API_KEY` - Your OpenAI API key
+- `CELERY_BROKER_URL` - Celery broker (should match Redis URL)
+- `CELERY_RESULT_BACKEND` - Celery result backend (should match Redis URL)
+
+Copy `.env.example` to `.env` and fill in your values before running the app.
 
 ## License
 
