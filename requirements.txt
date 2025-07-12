@@ -8,6 +8,7 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 Django==5.2.4
 djangorestframework==3.16.0
+drf-spectacular==0.28.0
 gunicorn==21.2.0
 openai==1.95.1
 kombu==5.5.4

@@ -1,0 +1,147 @@
+openapi: 3.0.3
+info:
+  title: Guideline API
+  version: 1.0.0
+  description: A minimal backend API for processing clinical guidelines with GPT
+paths:
+  /jobs/:
+    post:
+      operationId: jobs_create
+      description: Creates a new job to process clinical guidelines using GPT. Returns
+        an event_id for tracking.
+      summary: Create a new guideline processing job
+      tags:
+      - jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Optional title for the guideline
+                guideline_text:
+                  type: string
+                  description: The clinical guideline text to process
+              required:
+              - guideline_text
+            examples:
+              ValidRequest:
+                value:
+                  title: Diabetes Management Guidelines
+                  guideline_text: Patients with diabetes should monitor blood glucose
+                    daily...
+                summary: Valid Request
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                description: Job created successfully
+                type: object
+                properties:
+                  event_id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the job
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Bad request - missing required fields
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+          description: ''
+  /jobs/{event_id}/:
+    get:
+      operationId: jobs_retrieve
+      description: Retrieves the current status and results of a guideline processing
+        job.
+      summary: Get job status and results
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+        description: Unique identifier for the job
+        required: true
+      tags:
+      - jobs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                description: Job details retrieved successfully
+                type: object
+                properties:
+                  event_id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the job
+                  status:
+                    type: string
+                    enum:
+                    - queued
+                    - processing
+                    - done
+                    - failed
+                    description: Current job status
+                  summary:
+                    type: string
+                    description: Generated summary (only when status is done)
+                  checklist:
+                    type: array
+                    items:
+                      type: string
+                    description: Generated checklist (only when status is done)
+              examples:
+                QueuedJob:
+                  value:
+                    event_id: 123e4567-e89b-12d3-a456-426614174000
+                    status: queued
+                  summary: Queued Job
+                CompletedJob:
+                  value:
+                    event_id: 123e4567-e89b-12d3-a456-426614174000
+                    status: done
+                    summary: This guideline outlines diabetes management protocols...
+                    checklist:
+                    - Monitor blood glucose daily
+                    - Take medications as prescribed
+                    - Schedule regular checkups
+                  summary: Completed Job
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                description: Job not found
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message
+          description: ''
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
