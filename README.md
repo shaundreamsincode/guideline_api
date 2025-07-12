@@ -10,12 +10,22 @@ docker compose up --build
 
 The API will be available at `http://localhost:8000`
 
-## API Endpoints
+## Usage Examples
 
-- **POST /jobs/** - Create a new guideline processing job
-- **GET /jobs/{event_id}/** - Get job status and results
-- **GET /api/docs/** - Interactive API documentation (Swagger UI)
-- **GET /api/schema/** - OpenAPI specification
+### Create a new job
+```bash
+curl -X POST http://localhost:8000/jobs/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Diabetes Management Guidelines",
+    "guideline_text": "Patients with diabetes should monitor blood glucose daily and take medications as prescribed. Regular checkups with healthcare providers are essential for managing the condition effectively."
+  }'
+```
+
+### Check job status
+```bash
+curl http://localhost:8000/jobs/123e4567-e89b-12d3-a456-426614174000/
+```
 
 ## Architecture & Design Choices
 
@@ -33,12 +43,12 @@ flowchart TD
 ```
 
 ### **Asynchronous Processing**
-- **Celery + Redis**: Chose for reliable job queuing and processing
-- **Two-step GPT chain**: Summarize → Generate checklist for better results
+- **Celery + Redis**: Reliable job queuing and processing
+- **Two-step GPT chain**: Summarize → Generate checklist
 - **Event-driven**: Returns event_id immediately (<200ms) while processing continues
 
 ### **Database Design**
-- **PostgreSQL**: Robust, ACID-compliant for job persistence
+- **PostgreSQL**: ACID-compliant for job persistence
 - **UUID primary keys**: Globally unique, no sequential dependencies
 - **Status tracking**: Clear state machine (queued → processing → done/failed)
 
@@ -47,31 +57,13 @@ flowchart TD
 - **Graceful degradation**: Jobs marked as failed after max retries
 - **Validation**: Required fields enforced at API level
 
-### **Testing Strategy**
-- **Comprehensive unit tests**: 22 tests covering models, views, tasks
-- **Mocked external dependencies**: OpenAI API mocked for reliable testing
-- **SQLite for tests**: Fast, isolated test database
-
 ## AI Tools Usage
 
-### **Cursor AI Assistant**
-- **Code generation**: Initial Django project structure and API views
-- **Test writing**: Comprehensive test suite with proper mocking
-- **Documentation**: OpenAPI schema generation and README
-- **Refactoring**: Code cleanup and optimization
-
-### **How AI Helped**
-1. **Rapid prototyping**: Generated initial Django models and views in minutes
-2. **Best practices**: Ensured proper error handling and validation
-3. **Testing**: Created thorough test suite with edge cases
-4. **Documentation**: Auto-generated OpenAPI spec with examples
-5. **Code quality**: Identified and fixed potential issues
-
-### **AI Limitations & Human Oversight**
-- **Architecture decisions**: Human judgment on system design
-- **Business logic**: Manual review of GPT prompt engineering
-- **Security**: Manual validation of API key handling
-- **Performance**: Human optimization of database queries
+**Cursor AI Assistant** helped with:
+- Code generation for Django models, views, and tests
+- Documentation and OpenAPI schema generation
+- Code cleanup and best practices implementation
+- Error handling and validation improvements
 
 ## Technical Stack
 
