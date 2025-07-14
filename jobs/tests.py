@@ -364,3 +364,65 @@ class JobModelValidationTest(TestCase):
         job = Job(**job_data)
         with self.assertRaises(ValidationError):
             job.full_clean()
+
+class JobAPITestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_create_job(self):
+        response = self.client.post("/jobs/", {
+            "title": "Pre-Surgical Instructions",
+            "guideline_text": "Patients should fast for 12 hours before surgery."
+        }, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertIn("event_id", response.data)
+
+    def test_retrieve_job(self):
+        job = Job.objects.create(
+            title="Test Guideline",
+            guideline_text="Some text here.",
+            status="queued"
+        )
+        response = self.client.get(f"/jobs/{job.event_id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "queued")
+
+    def test_create_job_missing_guideline_text(self):
+        response = self.client.post("/jobs/", {
+            "title": "Missing Text"
+        }, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("guideline_text", response.data)
+
+    def test_retrieve_nonexistent_job(self):
+        fake_id = uuid.uuid4()
+        response = self.client.get(f"/jobs/{fake_id}/")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+
+    def test_process_guideline_task(self):
+        job = Job.objects.create(
+            title="Checklist Job",
+            guideline_text="Patient must fast and stop taking aspirin before surgery.",
+            status="queued"
+        )
+        process_guideline(str(job.event_id))
+        job.refresh_from_db()
+        self.assertEqual(job.status, "done")
+        self.assertIsNotNone(job.summary)
+        self.assertIsInstance(job.checklist, list)
+        self.assertTrue(len(job.checklist) > 0)
+
+    @patch("jobs.tasks.client.chat.completions.create")
+    def test_openai_failure_sets_job_failed(self, mock_create):
+        mock_create.side_effect = Exception("OpenAI failure")
+        job = Job.objects.create(
+            title="Should Fail",
+            guideline_text="Text that will trigger OpenAI.",
+            status="queued"
+        )
+        with self.assertRaises(Exception):
+            process_guideline(str(job.event_id))
+        job.refresh_from_db()
+        self.assertEqual(job.status, "failed")

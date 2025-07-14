@@ -89,6 +89,35 @@ pip install -r requirements-test.txt
 ./run_tests.sh --coverage
 ```
 
+## Running Tests Locally
+
+To run the test suite with the correct settings (using an in-memory SQLite database and test-specific configuration), use:
+
+```sh
+python manage.py test jobs.tests --settings=app.test_settings -v 2
+```
+y
+This ensures:
+- No need for Docker or a running PostgreSQL instance
+- Tests run quickly and safely in isolation
+- Celery and other production services are disabled for tests
+
+**Note on test commands:**
+
+- `./run_tests.sh`  
+  - **Recommended for most use cases.**
+  - Uses `pytest` for advanced features (e.g., coverage, parallelization, test selection).
+  - Always uses the correct test settings (`app.test_settings`), so it’s safe and fast.
+  - Supports extra options:
+    - `--coverage` for coverage reports
+    - `--unit` or `--integration` for test selection
+    - `--parallel` for faster runs on multi-core machines
+
+- `python manage.py test jobs.tests --settings=app.test_settings -v 2`  
+  - Runs tests using Django’s built-in test runner.
+  - Useful for debugging or if you need Django’s test output/behavior.
+  - Does not support the extra options provided by the script.
+
 ## Troubleshooting
 
 ### Common Issues

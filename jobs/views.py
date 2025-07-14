@@ -53,11 +53,23 @@ class JobCreateView(APIView):
                 },
             },
             400: {
-                "description": "Bad request - missing required fields",
+                "description": "Bad request - validation errors",
                 "type": "object",
                 "properties": {
-                    "error": {"type": "string", "description": "Error message"}
+                    "guideline_text": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Validation errors for guideline_text field"
+                    },
+                    "title": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Validation errors for title field"
+                    }
                 },
+                "example": {
+                    "guideline_text": ["This field is required."]
+                }
             },
         },
         examples=[
